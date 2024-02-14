@@ -1,17 +1,13 @@
 from retry import retry
-
 from binascii import hexlify,unhexlify
 import pickle
 import zlib
 import io
 import os
-
-# pip install boto3
 import boto3
 import botocore
 
 class Cache:
-	"Dummy / Base Cache"
 	def __init__(self):
 		pass
 	
@@ -62,6 +58,7 @@ class DiskCache(Cache):
 	"Local disk based cache"
 
 	def __init__(self, root):
+		super().__init__()
 		self.root = root
 	
 	def path(self, key):
@@ -90,9 +87,9 @@ class DiskCache(Cache):
 
 
 class S3Cache(Cache):
-	"S3 based cache"
 
 	def __init__(self, **kw):
+		super().__init__()
 		bucket = kw.get('bucket') or os.getenv('S3_CACHE_BUCKET','ask-my-pdf')
 		prefix = kw.get('prefix') or os.getenv('S3_CACHE_PREFIX','cache/x1')
 		region = kw.get('region') or os.getenv('S3_REGION','sfo3')
@@ -162,7 +159,6 @@ def get_cache(**kw):
 
 
 if __name__=="__main__":
-	#cache = DiskCache('__pycache__')
 	cache = S3Cache()
 	cache.put('xxx',{'a':1,'b':22})
 	print('get xxx', cache.get('xxx'))

@@ -36,7 +36,6 @@ def query_by_vector(vector, index, limit=None):
 
 
 def get_vectors(text_list):
-    "transform texts into embedding vectors"
     batch_size = 128
     vectors = []
     usage = Counter()

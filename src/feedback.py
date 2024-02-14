@@ -14,7 +14,6 @@ def as_int(x):
 
 
 class Feedback:
-    "Dummy feedback adapter"
 
     def __init__(self, user):
         ...
@@ -27,7 +26,6 @@ class Feedback:
 
 
 class RedisFeedback(Feedback):
-    "Redis feedback adapter"
 
     def __init__(self, user):
         REDIS_URL = os.getenv('REDIS_URL')

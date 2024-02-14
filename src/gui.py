@@ -10,22 +10,29 @@ import os
 import css
 from time import time as now
 import streamlit as st
+import dotenv
 
 # Initialize
 st.set_page_config(layout='centered', page_title=f'{app_name} {__version__}')
 ss = st.session_state
 if 'debug' not in ss: ss['debug'] = {}
 st.write(f'<style>{css.v1}</style>', unsafe_allow_html=True)
-header1 = st.empty()  # for errors / messages
-header2 = st.empty()  # for errors / messages
-header3 = st.empty()  # for errors / messages
+header1 = st.empty()
+header2 = st.empty()
+header3 = st.empty()
+
+# loud .env if exists
+if os.path.exists('.env'):
+    dotenv.load_dotenv('.env')
+    print('loaded .env')
 
 
 # Handlers
 def on_api_key_change():
+    # TODO: check if the key is valid
+    # TODO: if apk key is in the .env file add text to the input field
     api_key = ss.get('api_key') or os.getenv('OPENAI_KEY')
     model.use_key(api_key)
-    #
     if 'data_dict' not in ss: ss['data_dict'] = {}
     ss['storage'] = storage.get_storage(api_key, data_dict=ss['data_dict'])
     ss['cache'] = cache.get_cache()
@@ -77,7 +84,8 @@ def ui_api_key():
             st.progress(pct / 100)
             st.write('Refresh in: ' + model.community_tokens_refresh_in())
             st.write(
-                'You can sign up to OpenAI and/or create your API key [here](https://platform.openai.com/account/api-keys)')
+                'You can sign up to OpenAI and/or create your API key [here]('
+                'https://platform.openai.com/account/api-keys)')
             ss['community_pct'] = pct
             ss['debug']['community_pct'] = pct
         with t2:
@@ -92,13 +100,13 @@ def ui_api_key():
 def index_pdf_file():
     if ss['pdf_file']:
         ss['filename'] = ss['pdf_file'].name
-        if ss['filename'] != ss.get('fielname_done'):  # UGLY
+        if ss['filename'] != ss.get('fielname_done'):
             with st.spinner(f'indexing {ss["filename"]}'):
                 index = model.index_file(ss['pdf_file'], ss['filename'], fix_text=ss['fix_text'],
                                          frag_size=ss['frag_size'], cache=ss['cache'])
                 ss['index'] = index
                 debug_index()
-                ss['filename_done'] = ss['filename']  # UGLY
+                ss['filename_done'] = ss['filename']
 
 
 def debug_index():
@@ -130,7 +138,7 @@ def ui_pdf_file():
                         t0 = now()
                         index = ss['storage'].get(name)
                         ss['debug']['storage_get_time'] = now() - t0
-                ss['filename'] = name  # XXX
+                ss['filename'] = name
                 ss['index'] = index
                 debug_index()
             else:
@@ -162,14 +170,14 @@ def ui_fragments():
                  key='frag_size')
     b_reindex()
     st.number_input('max fragments', 1, 10, 4, key='max_frags')
-    st.number_input('fragments before', 0, 3, 1, key='n_frag_before')  # TODO: pass to model
-    st.number_input('fragments after', 0, 3, 1, key='n_frag_after')  # TODO: pass to model
+    st.number_input('fragments before', 0, 3, 1, key='n_frag_before')
+    st.number_input('fragments after', 0, 3, 1, key='n_frag_after')
 
 
 def ui_model():
     models = ['gpt-3.5-turbo', 'gpt-4', 'text-davinci-003', 'text-curie-001']
     st.selectbox('main model', models, key='model', disabled=not ss.get('api_key'))
-    st.selectbox('embedding model', ['text-embedding-ada-002'], key='model_embed')  # FOR FUTURE USE
+    st.selectbox('embedding model', ['text-embedding-ada-002'], key='model_embed')
 
 
 def ui_hyde():
@@ -230,7 +238,7 @@ def b_ask():
                 help='allow question and the answer to be stored in the ask-my-pdf feedback database')
     # c1,c2,c3 = st.columns([1,3,1])
     # c2.radio('zzz',['👍',r'...',r'👎'],horizontal=True,label_visibility="collapsed")
-    #
+
     disabled = (not ss.get('api_key') and not ss.get('community_pct', 0)) or not ss.get('index')
     if c1.button('get answer', disabled=disabled, type='primary', use_container_width=True):
         question = ss.get('question', '')
@@ -267,7 +275,7 @@ def b_ask():
         a = resp['text'].strip()
         ss['answer'] = a
         output_add(q, a)
-        st.experimental_rerun()  # to enable the feedback buttons
+        st.experimental_rerun()
 
 
 def b_clear():

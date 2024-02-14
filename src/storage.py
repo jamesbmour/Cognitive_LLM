@@ -125,7 +125,6 @@ class DictStorage(Storage):
 
 
 class LocalStorage(Storage):
-    "Local filesystem based storage"
 
     def __init__(self, secret_key, path):
         if not path:
