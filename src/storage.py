@@ -1,12 +1,8 @@
-"Storage adapter - one folder for each user / api_key"
-
 # pip install pycryptodome
-# REF: https://www.pycryptodome.org/src/cipher/aes
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
 from retry import retry
-
 from binascii import hexlify, unhexlify
 import hashlib
 import pickle
@@ -31,29 +27,24 @@ class Storage:
         self.AES_BLOCK_SIZE = 16
 
     def get(self, name, default=None):
-        "get one object from the folder"
         safe_name = self.encode(name)
         data = self._get(safe_name)
         obj = self.deserialize(data)
         return obj
 
     def put(self, name, obj):
-        "put the object into the folder"
         safe_name = self.encode(name)
         data = self.serialize(obj)
         self._put(safe_name, data)
         return data
 
     def list(self):
-        "list object names from the folder"
         return [self.decode(name) for name in self._list()]
 
     def delete(self, name):
-        "delete the object from the folder"
         safe_name = self.encode(name)
         self._delete(safe_name)
 
-    # IMPLEMENTED IN SUBCLASSES
     def _put(self, name, data):
         ...
 
@@ -66,7 +57,6 @@ class Storage:
     def _list(self):
         ...
 
-    # # #
 
     def serialize(self, obj):
         raw = pickle.dumps(obj)
@@ -211,13 +201,16 @@ class S3Storage(Storage):
 
 
 def get_storage(api_key, data_dict):
-    "get storage adapter configured in environment variables"
+    print(f'Using storage mode: {os.getenv("STORAGE_MODE", "dict")}')
     mode = os.getenv('STORAGE_MODE', '').upper()
     path = os.getenv('STORAGE_PATH', '')
     if mode == 'S3':
+        print(f'Using S3 bucket: {os.getenv("S3_BUCKET", "ask-my-pdf")}')
         storage = S3Storage(api_key)
     elif mode == 'LOCAL':
+        print(f'Using storage path: {path}')
         storage = LocalStorage(api_key, path)
     else:
+        print('Using dictionary based storage')
         storage = DictStorage(api_key, data_dict)
     return storage

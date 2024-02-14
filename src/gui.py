@@ -16,34 +16,43 @@ import dotenv
 st.set_page_config(layout='centered', page_title=f'{app_name} {__version__}')
 ss = st.session_state
 if 'debug' not in ss: ss['debug'] = {}
+
+# Immediately check for the OPENAI_KEY environment variable
+# and set it in session state if not already present.
+if 'api_key' not in ss or not ss['api_key']:
+    ss['api_key'] = os.getenv('OPENAI_KEY')
+    print('loaded .env')
+
 st.write(f'<style>{css.v1}</style>', unsafe_allow_html=True)
 header1 = st.empty()
 header2 = st.empty()
 header3 = st.empty()
 
-# loud .env if exists
-if os.path.exists('.env'):
-    dotenv.load_dotenv('.env')
-    print('loaded .env')
-
-
-# Handlers
 def on_api_key_change():
-    # TODO: check if the key is valid
-    # TODO: if apk key is in the .env file add text to the input field
-    api_key = ss.get('api_key') or os.getenv('OPENAI_KEY')
+    # Assuming the API key has already been set in session state,
+    # you can directly use it here.
+    api_key = ss['api_key']
+
+    # Use the API key for your model, storage, etc., setup
     model.use_key(api_key)
-    if 'data_dict' not in ss: ss['data_dict'] = {}
+    if 'data_dict' not in ss:
+        ss['data_dict'] = {}
     ss['storage'] = storage.get_storage(api_key, data_dict=ss['data_dict'])
     ss['cache'] = cache.get_cache()
     ss['user'] = ss['storage'].folder
     model.set_user(ss['user'])
     ss['feedback'] = feedback.get_feedback_adapter(ss['user'])
     ss['feedback_score'] = ss['feedback'].get_score()
-    #
+
+    # Update debug information
     ss['debug']['storage.folder'] = ss['storage'].folder
     ss['debug']['storage.class'] = ss['storage'].__class__.__name__
 
+
+# Call on_api_key_change() function to initialize components with the API key
+# if it was found in the .env file or the session state.
+if ss['api_key']:
+    on_api_key_change()
 
 ss['community_user'] = os.getenv('COMMUNITY_USER')
 if 'user' not in ss and ss['community_user']:
