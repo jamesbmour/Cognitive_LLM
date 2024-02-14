@@ -50,8 +50,6 @@ def get_vectors(text_list):
 
 
 def index_file(f, filename, fix_text=False, frag_size=0, cache=None):
-    "return vector index (dictionary) for a given PDF file"
-    # calc md5
     h = hashlib.md5()
     h.update(f.read())
     md5 = h.hexdigest()
@@ -99,7 +97,6 @@ def index_file(f, filename, fix_text=False, frag_size=0, cache=None):
 
 
 def split_pages_into_fragments(pages, frag_size):
-    "split pages (list of texts) into smaller fragments (list of texts)"
     page_offset = [0]
     for p, page in enumerate(pages):
         page_offset += [page_offset[-1] + len(page) + 1]
@@ -112,7 +109,6 @@ def split_pages_into_fragments(pages, frag_size):
 
 
 def text_to_fragments(text, size, page_offset):
-    "split single text into smaller fragments (list of texts)"
     if size and len(text) > size:
         out = []
         pos = 0
@@ -129,10 +125,8 @@ def text_to_fragments(text, size, page_offset):
                 if eos[i] > p_off[0]:
                     page += 1
                     del p_off[0]
-        # ugly: last iter
         text_fragment = f'PAGE({page}):\n' + text[pos:eos[i]]
         out += [text_fragment]
-        #
         out = [x for x in out if x]
         return out
     else:
@@ -140,35 +134,27 @@ def text_to_fragments(text, size, page_offset):
 
 
 def find_eos(text):
-    "return list of all end-of-sentence offsets"
     return [x.span()[1] for x in re.finditer('[.!?。]\s+', text)]
 
 
-###############################################################################
-
 def fix_text_problems(text):
-    "fix common text problems"
     text = re.sub('\s+[-]\s+', '', text)  # word continuation in the next line
     return text
 
 
 def query(text, index, task=None, temperature=0.0, max_frags=1, hyde=False, hyde_prompt=None, limit=None, n_before=1,
           n_after=1, model=None):
-    "get dictionary with the answer for the given question (text)."
     out = {}
 
     if hyde:
-        # TODO: model param
         out['hyde'] = hypotetical_answer(text, index, hyde_prompt=hyde_prompt, temperature=temperature)
-    # TODO: usage
 
-    # RANK FRAGMENTS
     if hyde:
         resp = ai.embedding(out['hyde']['text'])
-    # TODO: usage
+
     else:
         resp = ai.embedding(text)
-    # TODO: usage
+
     v = resp['vector']
     t0 = now()
     id_list, dist_list, text_list = query_by_vector(v, index, limit=limit)
