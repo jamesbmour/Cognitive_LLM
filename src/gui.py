@@ -10,7 +10,6 @@ import os
 import css
 from time import time as now
 import streamlit as st
-import dotenv
 
 # Initialize
 st.set_page_config(layout='centered', page_title=f'{app_name} {__version__}')
@@ -27,6 +26,7 @@ st.write(f'<style>{css.v1}</style>', unsafe_allow_html=True)
 header1 = st.empty()
 header2 = st.empty()
 header3 = st.empty()
+
 
 def on_api_key_change():
     # Assuming the API key has already been set in session state,

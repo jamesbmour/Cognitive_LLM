@@ -21,12 +21,11 @@ def set_user(user):
 
 
 def query_by_vector(vector, index, limit=None):
-    "return (ids, distances and texts) sorted by cosine distance"
     vectors = index['vectors']
     texts = index['texts']
-    #
+
     sim = cosine_distances([vector], vectors)[0]
-    #
+
     id_dist_list = list(enumerate(sim))
     id_dist_list.sort(key=lambda x: x[1])
     id_list = [x[0] for x in id_dist_list][:limit]
@@ -218,7 +217,6 @@ def query(text, index, task=None, temperature=0.0, max_frags=1, hyde=False, hyde
 
 
 def hypotetical_answer(text, index, hyde_prompt=None, temperature=0.0):
-    "get hypotethical answer for the question (text)"
     hyde_prompt = hyde_prompt or 'Write document that answers the question.'
     prompt = f"""
 	{hyde_prompt}

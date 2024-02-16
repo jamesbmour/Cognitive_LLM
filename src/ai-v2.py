@@ -4,18 +4,19 @@
 import stats
 import os
 import stats  # Assuming this is a custom module for tracking stats
-import openai  # Assuming this is a custom module for interfacing with OpenAI API
+from openai import OpenAI
+
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'),
+api_key=key)  # Assuming this is a custom module for interfacing with OpenAI API
 
 # TODO: Need to convert from ai_bricks to from openai import OpenAI
 # TODO: add a get model function to openai for getting available models from openrouter
 # Getting the default user from environment variable, with an empty string as default
 DEFAULT_USER = os.getenv('COMMUNITY_USER', '')
-openai.api_key = os.getenv('OPENAI_API_KEY')
 
 
 # Function to set the API key for OpenAI
 def use_key(key):
-    openai.api_key = key
 
 
 # Initialize usage statistics for the default user
@@ -43,7 +44,7 @@ def complete(text, **kwargs):
     # resp['model'] = model  # Add the model used to the response
     # return resp
     model = kwargs.pop('model', 'text-davinci-003')  # Update to 'text-davinci-003' as a default
-    response = openai.Completion.create(engine=model, prompt=text, **kwargs)
+    response = client.completions.create(engine=model, prompt=text, **kwargs)
     # The OpenAI Python client automatically uses the API key set globally in `openai.api_key`
     return response
 
@@ -57,7 +58,7 @@ def embedding(text, **kwargs):
     # resp['model'] = model
     # return resp
     model = kwargs.pop('model', 'text-embedding-ada-002')  # Using a default embedding model
-    response = openai.Embedding.create(engine=model, input=text, **kwargs)
+    response = client.embeddings.create(engine=model, input=text, **kwargs)
     return response
 
 
@@ -70,7 +71,7 @@ def embeddings(texts, **kwargs):
     # resp['model'] = model
     # return resp
     model = kwargs.pop('model', 'text-embedding-ada-002')  # Using a default embedding model
-    response = openai.Embedding.create(engine=model, input=texts, **kwargs)
+    response = client.embeddings.create(engine=model, input=texts, **kwargs)
     return response
 
 # Initializing a tokenizer model for token count operations
