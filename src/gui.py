@@ -10,6 +10,8 @@ import os
 import css
 from time import time as now
 import streamlit as st
+import dotenv
+dotenv.load_dotenv('.env')
 
 # Initialize
 st.set_page_config(layout='centered', page_title=f'{app_name} {__version__}')
@@ -19,8 +21,10 @@ if 'debug' not in ss: ss['debug'] = {}
 # Immediately check for the OPENAI_KEY environment variable
 # and set it in session state if not already present.
 if 'api_key' not in ss or not ss['api_key']:
-    ss['api_key'] = os.getenv('OPENAI_KEY')
+    key = os.getenv('OPENAI_KEY')
+    ss['api_key'] = key
     print('loaded .env')
+
 
 st.write(f'<style>{css.v1}</style>', unsafe_allow_html=True)
 header1 = st.empty()
@@ -186,7 +190,8 @@ def ui_fragments():
 def ui_model():
     models = ['gpt-3.5-turbo', 'gpt-4', 'text-davinci-003', 'text-curie-001']
     st.selectbox('main model', models, key='model', disabled=not ss.get('api_key'))
-    st.selectbox('embedding model', ['text-embedding-ada-002'], key='model_embed')
+    embed_models = [ 'text-embedding-3-small'	,'text-embedding-3-large','text-embedding-ada-002']
+    st.selectbox('embedding model', embed_models, key='model_embed')
 
 
 def ui_hyde():
