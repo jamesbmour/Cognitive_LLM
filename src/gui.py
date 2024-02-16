@@ -11,6 +11,7 @@ import css
 from time import time as now
 import streamlit as st
 import dotenv
+
 dotenv.load_dotenv('.env')
 
 # Initialize
@@ -24,7 +25,6 @@ if 'api_key' not in ss or not ss['api_key']:
     key = os.getenv('OPENAI_KEY')
     ss['api_key'] = key
     print('loaded .env')
-
 
 st.write(f'<style>{css.v1}</style>', unsafe_allow_html=True)
 header1 = st.empty()
@@ -41,6 +41,7 @@ def on_api_key_change():
     model.use_key(api_key)
     if 'data_dict' not in ss:
         ss['data_dict'] = {}
+    # TODO: Need to convert the storage mode to a vector database
     ss['storage'] = storage.get_storage(api_key, data_dict=ss['data_dict'])
     ss['cache'] = cache.get_cache()
     ss['user'] = ss['storage'].folder
@@ -82,7 +83,7 @@ def ui_info():
     st.write("By James Brendamour", unsafe_allow_html=True)
     ui_spacer(1)
     st.markdown("""
-    Ask questions to your PDF files using LLMs (Language Learning Models).
+    Ask questions to your PDF files using LLMs.
         """)
     ui_spacer(1)
 
@@ -96,9 +97,8 @@ def ui_api_key():
             st.write(f'Community tokens available: :{"green" if pct else "red"}[{int(pct)}%]')
             st.progress(pct / 100)
             st.write('Refresh in: ' + model.community_tokens_refresh_in())
-            st.write(
-                'You can sign up to OpenAI and/or create your API key [here]('
-                'https://platform.openai.com/account/api-keys)')
+            # st.write(
+            #     'You can si')
             ss['community_pct'] = pct
             ss['debug']['community_pct'] = pct
         with t2:
@@ -130,10 +130,11 @@ def debug_index():
     ss['debug']['index'] = d
 
 
+# Change this so that a pdf doesn't have to be uploaded to use the app
 def ui_pdf_file():
     st.write('## 2. Upload or select your PDF file')
     disabled = not ss.get('user') or (not ss.get('api_key') and not ss.get('community_pct', 0))
-    t1, t2 = st.tabs(['UPLOAD', 'SELECT'])
+    t1, t2, t3 = st.tabs(['UPLOAD', 'SELECT', 'Chat'])
     with t1:
         st.file_uploader('pdf file', type='pdf', key='pdf_file', disabled=disabled, on_change=index_pdf_file,
                          label_visibility="collapsed")
@@ -163,6 +164,37 @@ def ui_pdf_file():
         b_delete()
         ss['spin_select_file'] = st.empty()
 
+    with t3:
+        st.write('Chat: Chat without a PDF file.')
+        # make the get answer button work with the chat
+
+
+def process_uploaded_file(uploaded_file):
+    # Logic to handle the uploaded file
+    # For example, indexing the file contents
+    ss['filename'] = uploaded_file.name
+    with st.spinner(f'Indexing {ss["filename"]}'):
+        index = model.index_file(uploaded_file, ss['filename'], fix_text=ss['fix_text'],
+                                 frag_size=ss['frag_size'], cache=ss['cache'])
+        ss['index'] = index
+        debug_index()
+        ss['filename_done'] = ss['filename']
+
+
+# def ui_pdf_file():
+#     st.write('## 2. Optional: Upload your PDF file')
+#     disabled = not ss.get('user') or (not ss.get('api_key'))
+#
+#     # Directly use the return value of st.file_uploader
+#     uploaded_file = st.file_uploader('PDF file (optional)', type='pdf', key='pdf_file', disabled=disabled,
+#                                      label_visibility="collapsed")
+#     if uploaded_file is not None:
+#         # Process the uploaded file directly without assigning it to st.session_state
+#         process_uploaded_file(uploaded_file)
+#     else:
+#         # Handle the case where no file is uploaded
+#         st.write("No PDF uploaded. You can still ask general questions.")
+
 
 def ui_show_debug():
     st.checkbox('show debug section', key='show_debug')
@@ -190,7 +222,7 @@ def ui_fragments():
 def ui_model():
     models = ['gpt-3.5-turbo', 'gpt-4', 'text-davinci-003', 'text-curie-001']
     st.selectbox('main model', models, key='model', disabled=not ss.get('api_key'))
-    embed_models = [ 'text-embedding-3-small'	,'text-embedding-3-large','text-embedding-ada-002']
+    embed_models = ['text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002']
     st.selectbox('embedding model', embed_models, key='model_embed')
 
 
@@ -240,6 +272,43 @@ def ui_debug():
 
 def b_ask():
     c1, c2, c3, c4, c5 = st.columns([2, 1, 1, 2, 2])
+    # disabled = (not ss.get('api_key') and not ss.get('community_pct', 0)) or (not ss.get('filename') and not ss.get('index'))
+    # if c1.button('ask', disabled=disabled, type='primary', use_container_width=True):
+    #     question = ss.get('question', '')
+    #     temperature = ss.get('temperature', 0.0)
+    #     hyde = ss.get('use_hyde')
+    #     hyde_prompt = ss.get('hyde_prompt')
+    #     if ss.get('use_hyde_summary'):
+    #         summary = ss['index']['summary']
+    #         hyde_prompt += f" Context: {summary}\n\n"
+    #     task = ss.get('task')
+    #     max_frags = ss.get('max_frags', 1)
+    #     n_before = ss.get('n_frag_before', 0)
+    #     n_after = ss.get('n_frag_after', 0)
+    #     index = ss.get('index', {})
+    #     with st.spinner('preparing answer'):
+    #         resp = model.query(question, index,
+    #                            task=task,
+    #                            temperature=temperature,
+    #                            hyde=hyde,
+    #                            hyde_prompt=hyde_prompt,
+    #                            max_frags=max_frags,
+    #                            limit=max_frags + 2,
+    #                            n_before=n_before,
+    #                            n_after=n_after,
+    #                            model=ss['model'],
+    #                            )
+    #     usage = resp.get('usage', {})
+    #     usage['cnt'] = 1
+    #     ss['debug']['model.query.resp'] = resp
+    #     ss['debug']['resp.usage'] = usage
+    #     ss['debug']['model.vector_query_time'] = resp['vector_query_time']
+    #
+    #     q = question.strip()
+    #     a = resp['text'].strip()
+    #     ss['answer'] = a
+    #     output_add(q, a)
+    #     st.experimental_rerun()
     if c2.button('👍', use_container_width=True, disabled=not ss.get('output')):
         ss['feedback'].send(+1, ss, details=ss['send_details'])
         ss['feedback_score'] = ss['feedback'].get_score()
@@ -289,7 +358,7 @@ def b_ask():
         a = resp['text'].strip()
         ss['answer'] = a
         output_add(q, a)
-        st.experimental_rerun()
+        st.rerun()
 
 
 def b_clear():

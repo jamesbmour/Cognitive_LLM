@@ -201,6 +201,7 @@ class S3Storage(Storage):
 
 
 def get_storage(api_key, data_dict):
+    # TODO: Need to convert the storage mode to a vector database
     print(f'Using storage mode: {os.getenv("STORAGE_MODE", "dict")}')
     mode = os.getenv('STORAGE_MODE', '').upper()
     path = os.getenv('STORAGE_PATH', '')

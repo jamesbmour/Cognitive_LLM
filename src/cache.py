@@ -7,6 +7,7 @@ import os
 import boto3
 import botocore
 
+import sqlite3
 
 class Cache:
     def __init__(self):
@@ -146,13 +147,105 @@ class S3Cache(Cache):
             Key=self.get_s3_key(key))
 
 
+class ChromaCache(Cache):
+    def __init__(self, **kw):
+        super().__init__()
+        # Initialize Chroma client
+        # This is a placeholder; replace it with actual initialization code based on Chroma's API
+        self.chroma = self.initialize_chroma_client(**kw)
+
+    def initialize_chroma_client(self, **kw):
+        # Initialize and return a Chroma client
+        # This method should be replaced with actual code to connect to Chroma
+        pass
+
+    def put(self, key, obj):
+        chroma_key = self.encode(key)
+        data = self.serialize(obj)
+        # Assuming Chroma's client has a method 'put' for storing data
+        self.chroma.put(chroma_key, data)
+
+    def get(self, key, default=None):
+        chroma_key = self.encode(key)
+        try:
+            # Assuming Chroma's client has a method 'get' for retrieving data
+            data = self.chroma.get(chroma_key)
+            if data is None:
+                return default
+            obj = self.deserialize(data)
+            return obj
+        except Exception as e:
+            # Handle exceptions, possibly logging them, and return default value
+            print(f"Error accessing Chroma: {e}")
+            return default
+
+    def has(self, key):
+        chroma_key = self.encode(key)
+        try:
+            # Assuming Chroma's client has a method to check if a key exists
+            return self.chroma.has(chroma_key)
+        except Exception as e:
+            print(f"Error checking key in Chroma: {e}")
+            return False
+
+    def delete(self, key):
+        chroma_key = self.encode(key)
+        # Assuming Chroma's client has a method 'delete' for removing data
+        self.chroma.delete(chroma_key)
+
+
+class VectorDBCache(Cache):
+    def __init__(self, db_path):
+        super().__init__()
+        self.db_path = db_path
+        self.conn = sqlite3.connect(db_path)
+        self.init_db()
+
+    def init_db(self):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cache (
+                key TEXT PRIMARY KEY,
+                data BLOB
+            )
+        ''')
+        self.conn.commit()
+
+    def put(self, key, obj):
+        data = self.serialize(obj)
+        cursor = self.conn.cursor()
+        cursor.execute('REPLACE INTO cache (key, data) VALUES (?, ?)', (key, data))
+        self.conn.commit()
+
+    def get(self, key):
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT data FROM cache WHERE key = ?', (key,))
+        row = cursor.fetchone()
+        if row:
+            return self.deserialize(row[0])
+        return None
+
+    def has(self, key):
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT 1 FROM cache WHERE key = ?', (key,))
+        return cursor.fetchone() is not None
+
+    def delete(self, key):
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM cache WHERE key = ?', (key,))
+        self.conn.commit()
+
+
 def get_cache(**kw):
     mode = os.getenv('CACHE_MODE', '').upper()
     path = os.getenv('CACHE_PATH', '')
+    db_path = os.getenv('VECTOR_DB_PATH', 'vector_cache.db')
     if mode == 'DISK':
         return DiskCache(path)
     elif mode == 'S3':
         return S3Cache(**kw)
+    elif mode == 'VECTOR_DB':
+        return ChromaCache(db_path)
     else:
         return Cache()
 
