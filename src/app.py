@@ -20,7 +20,7 @@ from htmlTemplates import css, bot_template, user_template
 from langchain.llms import HuggingFaceHub, HuggingFacePipeline
 # from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import constants
-from shared.constants import LLM_MODELS
+from constants import LLM_MODELS
 from utils import debug, get_available_models, get_pdf_text, get_file_text
 
 # load environment variables
