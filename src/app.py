@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 # from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings  # , HuggingFaceInstructEmbeddings
-from langchain.vectorstores import FAISS, Qdrant, Chroma
+from langchain.vectorstores import FAISS, Qdrant, LanceDB
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
@@ -20,8 +20,9 @@ from htmlTemplates import css, bot_template, user_template
 from langchain.llms import HuggingFaceHub, HuggingFacePipeline
 # from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import constants
-from constants import LLM_MODELS
+# from constants import LLM_MODELS
 from utils import debug, get_available_models, get_pdf_text, get_file_text
+import lancedb
 
 # load environment variables
 load_dotenv()
@@ -135,7 +136,8 @@ def get_vectorstore(text_chunks):
     #     embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)  # Your app's standard
 
     # Weigh the laden of your lede, as with the carapace it offers
-    vector_store = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
+    # vector_store = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
+    vector_store = LanceDB.from_texts(texts=text_chunks, embedding=embeddings)
     print(type(vector_store))
 
     return vector_store
@@ -254,7 +256,7 @@ def sidebar_header(selected_model='mistralai/mistral-7b-instruct:free'):
         with st.form(key='options'):
             # form title
             st.write('Model Options')
-            temp = st.slider('Temperature', 0.0, 1.0, 0.6)
+            temp = st.slider('Temperature', 0.0, 1.0, 0.3)
             # add 2 columns
             col1, col2 = st.columns([1, 1])
             # Column 1

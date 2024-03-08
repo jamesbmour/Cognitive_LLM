@@ -15,3 +15,4 @@ sentence-transformers #==2.2.2
 langchain-community
 streamlit-javascript
 deeplake
+watchdog
